@@ -4,12 +4,25 @@
 *.dll
 *.sh
 *.zip
+*.o
 code2.c
-config.lua
 ltn12.lua
 mime.lua
 socket.lua
 lua/*
 mime/*
 socket/*
-plugins/*
+config.lua
+plugins/sandbox/luasandbox
+.sconsign.dblite
+plugins/sandbox/.sconf_temp/*
+.sconf_temp/*
+config.log
+# Ignore the irc directory
+irc/README.markdown
+irc/asyncoperations.lua
+irc/doc/irc.luadoc
+irc/handlers.lua
+irc/init.lua
+irc/set.lua
+irc/util.lua

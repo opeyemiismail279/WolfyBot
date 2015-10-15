@@ -21,9 +21,9 @@ socket = require"socket"
 local console=socket.tcp()
 console:settimeout(5)
 
-if not WINDOWS and config.terminalinput then
+if not WINDOWS and config.terminal.input then
 	--start my console line-in
-	os.execute(config.terminal.." lua consolein.lua")
+	os.execute(config.consle.terminal.." lua consolein.lua")
 end
 shutdown = false
 user = config.user
@@ -55,18 +55,18 @@ end
 
 dofile("hooks.lua")
 dofile("commands.lua")
-if #config.autojoin <= 0 then print("No autojoin channels set in config.lua!") end
-for k,v in pairs(config.autojoin) do
+if #config.channels.autojoin <= 0 then print("No autojoin channels set in config.lua!") end
+for k,v in pairs(config.channels.autojoin) do
 	irc:join(v)
 end
 --join extra config channels if they for some reason aren't in the autojoin
-if config.primarychannel then
-	irc:join(config.primarychannel)
+if config.channels.primarychannel then
+	irc:join(config.channels.primarychannel)
 end
 if config.logchannel then
-	irc:join(config.logchannel)
+	irc:join(config.channels.logchannel)
 end
-irc:sendChat(config.primarychannel, "moo"*#config.autojoin)
+irc:sendChat(config.channels.primarychannel, "moo"*#config.channels.autojoin)
 
 local function consoleThink()
 	if not connected then return end
