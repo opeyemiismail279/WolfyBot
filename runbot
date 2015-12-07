@@ -24,7 +24,7 @@ if [ -e /usr/bin/luajit ]
 				while :
 					do
 					echo "(Re)starting Wolfybot - Press Ctrl-C to break."
-					luajit init.lua
+					lua init.lua
 					done
 			else
 				echo -e "${RED}ERROR: ${WHITE}Lua was not found at /usr/bin/lua! If lua is installed in this computer, then you may safely proceed by running lua init.lua inside the directory wherein Crackbot resides."
