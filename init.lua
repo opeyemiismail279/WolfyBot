@@ -21,9 +21,9 @@ socket = require"socket"
 local console=socket.tcp()
 console:settimeout(5)
 
-if not WINDOWS and config.terminal.input then
+if not WINDOWS and config.console.terminal.input then
 	--start my console line-in
-	os.execute(config.consle.terminal.." lua consolein.lua")
+	os.execute(config.console.terminal.." lua consolein.lua")
 end
 shutdown = false
 user = config.user
