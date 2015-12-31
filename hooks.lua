@@ -35,7 +35,7 @@ function ircSendChatQ(chan,text,nohook)
 	if #text == 0 then return end
 	local host = ""
 	if not chan then chan=config.channels.logs end
-	if irc.channels[config.channels.primary] and irc.channels[config.channels.primary.users[irc.nick] then
+	if irc.channels[config.channels.primary] and irc.channels[config.channels.primary].users[irc.nick] then
 		host = irc.channels[config.channels.primary].users[irc.nick].fullhost or ""
 	end
 	local byteLimit = 498 - #chan - #host
