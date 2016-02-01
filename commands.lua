@@ -165,7 +165,12 @@ add_cmd(sneaky2,"*$woof",0,nil,false)
 local function sneaky3(usr,chan,msg)
 	return "WooOoOoooOoof"
 end
-add_cmd(sneaky3,"moo",0,nil,false)
+add_cmd(sneaky3,"woof",0,nil,false)
+local function sneaky4(usr,chan,msg)
+	return "MooOoOoooOooo"
+end
+add_cmd(sneaky4,"moo",0,nil,false)
+
 
 --RELOAD files
 local function reload(usr,chan,msg,args)
