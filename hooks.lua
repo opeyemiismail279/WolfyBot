@@ -4,12 +4,14 @@ local waitingCommands = {}
 _print = _print or print
 print = function(...)
 	_print(...)
-	local arg={...}
+	local arg = {...}
 	local str = table.concat(arg,"\t")
-	local frqq=io.open("log.txt","a")
-	frqq:write(os.date("[%x] [%X] ")..str.."\n")
-	frqq:flush()
-	frqq:close()
+	local frqq = io.open("log.txt","a")
+	if frqq then
+		frqq:write(os.date("[%x] [%X] ")..str.."\n")
+		frqq:flush()
+		frqq:close()
+	end
 end
 
 onSendHooks = onSendHooks or {}
@@ -246,7 +248,7 @@ function makeCMD(cmd,usr,channel,msg,permcheck)
 	if commands[cmd] then
 		--command exists
 		--print("INHOOK "..getPerms(usr.host).." "..tostring(cmd))
-		if permcheck or getPerms(usr.host) >= commands[cmd].level then
+		if permcheck or getPerms(usr.host,channel) >= getCommandPerms(cmd, channel) then
 			--we have permission
 
 			return function()
@@ -335,8 +337,13 @@ local function realchat(usr,channel,msg)
 	end
 
 	local func,err
+
 	if cmd then
-		func,err=makeCMD(cmd,usr,channel,rest)
+		if usr.nick ~= channel and usr.host and usr.host == "turing.jacksonmj.co.uk" and usr.username and (usr.username == "bagels" or usr.username == "jacksonmj3" or usr.username == "Stewie") then
+			cmd = nil
+		else
+			func,err=makeCMD(cmd,usr,channel,rest)
+		end
 	end
 	listen(usr,channel,msg)
 	if func then

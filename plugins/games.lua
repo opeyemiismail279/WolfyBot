@@ -56,6 +56,14 @@ for k,v in pairs(storeInventory) do
 	table.insert(storeInventorySorted,v)
 end
 table.sort(storeInventorySorted,function(a,b) if a.cost<b.cost then return a end end)
+local function copyTable(t)
+	if not t then return end
+	local d = {}
+	for k,v in pairs(t) do
+		d[k]=v
+	end
+	return d
+end
 
 couponList = {
 	--Usable Coupons
@@ -236,10 +244,10 @@ end
 
 
 local antiPadList = {"iPad","blackhole","company","billion","iPad","country"}
-local ratelimit = {}
-local peruserlimit = 1000
-local perusermutelimit = 1100
-local perchannellimit = 2500
+ratelimit = ratelimit or {}
+local peruserlimit = 500
+local perusermutelimit = 600
+local perchannellimit = 1750
 
 --make a timer loop save users every minute, errors go to me
 local function timedSave()
@@ -274,7 +282,7 @@ local function timedSave()
 			end
 		end
 	end
-	if os.date("%M") == "01" or os.date("%M") == "02" then
+	if os.date("%M") == "00" then
 		ratelimit = {}
 	end
 	table.save(gameUsers,"plugins/gameUsers.txt")
@@ -374,7 +382,7 @@ local itemUses = {
 		elseif rnd <= 90 then
 			local t = {}
 			for k,v in pairs(gameUsers[usr.host].inventory) do if v.cost < 100000 and v.cost>0 then table.insert(t,v) end end
-			if #t then
+			if #t>0 then
 				local nom = t[math.random(#t)]
 				remInv(usr, nom.name, 1)
 				return "The junk expanded and ate your ".. nom.name .." (-1 ".. nom.name ..")"
@@ -682,7 +690,7 @@ local itemUses = {
 		end
 	end,
 	--gold
-	["diamond"]=function(usr, args)
+	--[[["diamond"]=function(usr, args)
 		local other = getUserFromNick(args[2])
 		if other and other.nick ~= usr.nick then
 			local rnd = math.random(1,100)
@@ -704,7 +712,7 @@ local itemUses = {
 				end
 			end
 		end
-	end,
+	end,]]
 	["cow"]=function(moo)
 		local cowCount = gameUsers[moo.host].inventory["cow"].amount
 		local rnd = math.random(1,100)
@@ -798,7 +806,7 @@ local itemUses = {
 			return "You gaze upon the lawns of your estate that seem to go on forever..."
 		elseif rnd <= 16 then
 			local amt = math.random(1,5)
-			addInv(usr, storeInventory["house"], 1)
+			addInv(usr, storeInventory["house"], amt)
 			local text = (amt == 1 and "a house" or "some houses")
 			return "You build "..text.." on your estate. (+"..amt.." house"..(amt == 1 and "" or "s")..")"
 		elseif rnd <= 22 then
@@ -850,7 +858,7 @@ local itemUses = {
 				local t = {}
 				for k,v in pairs(gameUsers[other.host].inventory) do table.insert(t,v) end
 				local otheritem = t[math.random(#t)]
-				if otheritem.instock or otheritem.cost<0 or otheritem.cost>=1e14 then
+				if (otheritem.instock or otheritem.cost<0) and otheritem.cost<1e14 then
 					remInv(other, otheritem.name, 1)
 					addInv(usr, otheritem,1)
 					return "You threw your billion at "..other.nick..", they are thankful and give you a " .. otheritem.name .. " in return without thinking."
@@ -964,7 +972,11 @@ local function useItem(usr,chan,msg,args)
 		return "Error: this command has been temporarily disabled due to spam, please wait an hour"
 	end
 	local item = itemName(args[1])
-	if ( not gameUsers[usr.host].inventory[item] or gameUsers[usr.host].inventory[item].amount<=0 ) and item~="whitehole" then
+	--Cheap coupon use area for now.
+	if item=="whitehole" then
+		return itemUses[item](usr,args,chan)
+	end
+	if not gameUsers[usr.host].inventory[item] or gameUsers[usr.host].inventory[item].amount<=0 then
 		return "You don't have that item!"
 	elseif itemUses[item] and gameUsers[usr.host].inventory[item] then
 		return itemUses[item](usr,args,chan)
@@ -1171,7 +1183,7 @@ local function store(usr,chan,msg,args)
 		if not args[2] then return "Need an item! 'info <item>'" end
 		local item = itemName(args[2])
 		for k,v in pairs(gameUsers[usr.host].inventory) do
-			if k==item then return "Item: "..k.." Cost: $"..nicenum(v.cost).." Info: "..v.info end
+			if k==item then return "Item: "..k.." ("..v.amount..") Cost: $"..nicenum(v.cost).." Info: "..v.info end
 		end
 		for k,v in pairs(storeInventory) do
 			if k==item then return "Item: "..k.." Cost: $"..nicenum(v.cost).." Info: "..v.info end
@@ -1183,17 +1195,18 @@ local function store(usr,chan,msg,args)
 		local item = itemName(args[2])
 		local amt = math.floor(tonumber(args[3]) or 1)
 		if amt==amt and amt>0 then
-			local v = storeInventory[item]
+			local v = copyTable(storeInventory[item])
 			if v and v.instock then
-				local cost = v.cost*amt
 				--New Coupon discounts!
 				local discount = hasCoup(usr,1,2,3)
-				if discount then cost = cost * (1-couponList[discount]) remCoup(usr,discount,1) end
-				
+				if discount then v.cost = v.cost * (1-couponList[discount].var) remCoup(usr,discount,1) end
+
+				local cost = v.cost*amt
+
 				if gameUsers[usr.host].cash - cost >= 0 then
 					changeCash(usr, -cost)
 					addInv(usr, v, amt, true)
-					return "You bought "..nicenum(amt).." "..v.name
+					return "You bought "..nicenum(amt).." "..v.name.." for $"..cost
 				else
 					return "Not enough money!"
 				end
@@ -1238,7 +1251,7 @@ local function store(usr,chan,msg,args)
 					--New Coupon Bonus
 					local discount = hasCoup(usr,4,5,6)
 					if discount then value = value * (1+couponList[discount]) remCoup(usr,discount,1) end
-				
+
 					if v.cost<0 and gameUsers[usr.host].cash < -value then return "You can't afford that!" end
 					changeCash(usr,value)
 					remInv(usr,item,amt)
@@ -1507,7 +1520,7 @@ local function quiz(usr,chan,msg,args)
 				--Quiz Coupon Answer Bonus
 				local discount = hasCoup(nusr,11,12,13)
 				if discount then earned = earned * (1+couponList[discount]) remCoup(usr,discount,1) end
-				
+
 				local cstr = changeCash(nusr,earned)
 				if nusr.nick==usr.nick then
 					ircSendChatQ(chan,nusr.nick..": Answer is correct, earned "..(earned-bet)..cstr)
@@ -1538,8 +1551,14 @@ local function ask(usr,chan,msg,args)
 	if chan:sub(1,1)=='#' then return "Can only start question in query." end
 	if not msg or not args[3] then return commands["ask"].helptext end
 	local toChan = args[1]
-	if toChan and toChan:sub(1,1) ~= "#" then
+	if toChan:sub(1,1) ~= "#" then
 		return "Error, you must ask questions to a channel"
+	elseif not irc.channels[toChan] then
+		return "Error, i'm not in that channel"
+	elseif not irc.channels[toChan].users[usr.nick] then
+		return "Error, you must be in "..toChan.." to ask a question there"
+	elseif getPerms(usr.host, toChan) < getCommandPerms("ask", toChan) then
+		return "Error, you don't have permission to ask a question in there"
 	end
 	local qName = toChan.."ask"
 	if activeQuiz[qName] then return "There is already an active question there!" end
